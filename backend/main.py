@@ -59,17 +59,31 @@ class EvaluationRequest(BaseModel):
 
 
 def _extract_json_object(model_text: str) -> dict[str, Any]:
-    """Parse a JSON object even if the model wraps it in a Markdown fence."""
+    """Extract a JSON object from a model response."""
     cleaned = model_text.strip()
-    cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
+
+    cleaned = re.sub(
+        r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE
+    )
     cleaned = re.sub(r"\s*```$", "", cleaned)
 
     start = cleaned.find("{")
-    end = cleaned.rfind("}")
-    if start < 0 or end <= start:
+    if start == -1:
         raise ValueError("The AI response did not contain a JSON object.")
-    return json.loads(cleaned[start : end + 1])
 
+    decoder = json.JSONDecoder()
+
+    try:
+        result, _ = decoder.raw_decode(cleaned[start:])
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            f"AI returned incomplete or invalid JSON: {exc}"
+        ) from exc
+
+    if not isinstance(result, dict):
+        raise ValueError("The AI response was not a JSON object.")
+
+    return result
 
 def _year_from_filename(filename: str) -> Optional[int]:
     match = re.search(r"\b(20\d{2})\b", filename or "")
@@ -152,8 +166,8 @@ PAPER TEXT:
             },
             {"role": "user", "content": prompt},
         ],
-        max_tokens=3500,
-        temperature=0.1,
+        max_tokens=6000,
+        temperature=0.0,
     )
     content = response.choices[0].message.content or ""
     parsed = _extract_json_object(content)
