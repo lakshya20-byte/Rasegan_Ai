@@ -503,18 +503,24 @@ async def analyze_past_papers(
         )
 
     try:
-        families = await asyncio.to_thread(
-                    _group_similar_questions, question_records, subject
+    families = await asyncio.to_thread(
+        _group_similar_questions, question_records, subject
     )
-        ranked_questions = _build_priority_results(
-            question_records, families, total_papers=len(paper_summaries)
-        )
-    except Exception as error:
-        logger.exception("Past-paper grouping failed")
-        raise HTTPException(
-            status_code=502,
-            detail="Questions were extracted, but AI grouping failed. Please retry the analysis.",
-        ) from error
+except Exception:
+    logger.exception("AI grouping failed; using individual questions.")
+    families = [
+        {
+            "label": item.get("topic") or item["question"][:120],
+            "ids": [index],
+        }
+        for index, item in enumerate(question_records)
+    ]
+
+ranked_questions = _build_priority_results(
+    question_records,
+    families,
+    total_papers=len(paper_summaries),
+)
 
     return {
         "success": True,
