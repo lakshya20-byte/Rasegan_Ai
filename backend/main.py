@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -373,9 +374,8 @@ def home():
 
 
 @app.get("/health")
-def health():
+async def health():
     return {"status": "healthy", "model": MODEL}
-
 
 @app.post("/api/evaluate")
 def evaluate(request: EvaluationRequest):
@@ -441,7 +441,9 @@ async def analyze_past_papers(
                 raise ValueError("File exceeds the 15 MB limit.")
 
             text, page_count = _extract_pdf_text(pdf_bytes, filename)
-            extracted_questions = _ask_model_for_questions(text, filename, subject, exam_type)
+            extracted_questions = await asyncio.to_thread(
+            _ask_model_for_questions, text, filename, subject, exam_type
+)
             if not extracted_questions:
                 raise ValueError("No examination questions could be identified in this PDF.")
 
@@ -487,7 +489,9 @@ async def analyze_past_papers(
         )
 
     try:
-        families = _group_similar_questions(question_records, subject)
+        families = await asyncio.to_thread(
+                    _group_similar_questions, question_records, subject
+    )
         ranked_questions = _build_priority_results(
             question_records, families, total_papers=len(paper_summaries)
         )
