@@ -245,10 +245,9 @@ RECORDS:
     )
     content = response.choices[0].message.content or ""
     try:
-        parsed = _extract_json_object(content)
-         except ValueError:
-        logger.exception("Failed to extract JSON from AI response.")
-        response = client.chat.completions.create(
+     parsed = _extract_json_object(content)
+     except ValueError:
+     response = client.chat.completions.create(
         model=MODEL,
         messages=[
             {
@@ -267,7 +266,10 @@ RECORDS:
         max_tokens=8000,
         temperature=0,
     )
-     parsed = _extract_json_object(
+    parsed = _extract_json_object(
+        response.choices[0].message.content or ""
+    ))
+      parsed = _extract_json_object(
         response.choices[0].message.content or ""
     )
     families = parsed.get("families", [])
