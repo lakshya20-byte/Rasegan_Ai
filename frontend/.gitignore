@@ -1,0 +1,13 @@
+@'
+.env
+**/.env
+.venv/
+**/.venv/
+node_modules/
+**/node_modules/
+_pycache_/
+*.py[cod]
+dist/
+*.log
+.DS_Store
+'@ | Set-Content .gitignore
