@@ -503,11 +503,11 @@ async def analyze_past_papers(
         )
 
     try:
-    families = await asyncio.to_thread(
+     families = await asyncio.to_thread(
         _group_similar_questions, question_records, subject
     )
-except Exception:
-    logger.exception("AI grouping failed; using individual questions.")
+    except Exception:
+     logger.exception("AI grouping failed; using individual questions.")
     families = [
         {
             "label": item.get("topic") or item["question"][:120],
@@ -516,7 +516,7 @@ except Exception:
         for index, item in enumerate(question_records)
     ]
 
-ranked_questions = _build_priority_results(
+    ranked_questions = _build_priority_results(
     question_records,
     families,
     total_papers=len(paper_summaries),
