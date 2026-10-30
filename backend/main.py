@@ -166,7 +166,7 @@ PAPER TEXT:
             },
             {"role": "user", "content": prompt},
         ],
-        max_tokens=6000,
+        max_tokens=8000,
         temperature=0.0,
     )
     content = response.choices[0].message.content or ""
@@ -244,7 +244,32 @@ RECORDS:
         temperature=0.1,
     )
     content = response.choices[0].message.content or ""
-    parsed = _extract_json_object(content)
+    try:
+        parsed = _extract_json_object(content)
+         except ValueError:
+        logger.exception("Failed to extract JSON from AI response.")
+        response = client.chat.completions.create(
+        model=MODEL,
+        messages=[
+            {
+                "role": "system",
+                "content": "Return valid JSON only. No Markdown. Use the exact requested schema."
+            },
+            {
+                "role": "user",
+                "content": (
+                    "Convert the following extracted exam questions into valid JSON "
+                    'with this structure: {"questions":[{"question":"...","topic":null,"unit":null,"marks":null}]}'
+                    "\n\n" + content[:12000]
+                )
+            }
+        ],
+        max_tokens=8000,
+        temperature=0,
+    )
+     parsed = _extract_json_object(
+        response.choices[0].message.content or ""
+    )
     families = parsed.get("families", [])
     if not isinstance(families, list):
         raise ValueError("Nemotron returned an invalid question grouping.")
